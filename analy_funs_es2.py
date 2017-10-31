@@ -1,4 +1,4 @@
-def get_participant_data(aPs, cPs, paths):
+def get_participant_data_plt(aPs, cPs, paths):
     """
     read participant data stored as csv files
 
@@ -17,7 +17,8 @@ def get_participant_data(aPs, cPs, paths):
 
     Notes
     -----
-    NA
+    Hard-coded child subj who is missing data from one cartoon (subj 4, cartoon 1)
+    Have to code handling of >rt_threshold data (PsychoPy missed these catches)
     """
     
     import pdb
@@ -25,6 +26,7 @@ def get_participant_data(aPs, cPs, paths):
     import pandas as pd
     
     rm_outliers_std = 2.5
+    rt_threshold = 3000
     
     dPath = paths[0]
 
@@ -34,10 +36,10 @@ def get_participant_data(aPs, cPs, paths):
             iPs = aPs
         else:
             iPs = cPs
-            cDat = [] # dummy code when no children data
-            allDat = {'aDat_byCs': aDat, 'cDat_byCs': cDat, 'aPs': aPs, 'cPs': cPs} # dummy code when no children data
-            return allDat # dummy code when no children data
-            
+            #cDat = [] # dummy code when no children data
+            #allDat = {'aDat_byCs': aDat, 'cDat_byCs': cDat, 'aPs': aPs, 'cPs': cPs} # dummy code when no children data
+            #return allDat # dummy code when no children data
+
         dat_c1 = pd.DataFrame()
         dat_c2 = pd.DataFrame()
             
@@ -48,20 +50,32 @@ def get_participant_data(aPs, cPs, paths):
                 iCartoonOrder = ['2', '1']
     
             for s, c in enumerate(iCartoonOrder):
+                if (p == 'c' and i == 4 and c == '1'): # <---- hard-coded subj ID
+                   continue
+                
                 iDat = pd.read_csv(dPath + '/' + p + '_p' + str(i) + '_s' + str(s + 1) + '_c' + c + '.csv')
+
+                # label >rt_threshold trials as 'timeout' (where PsychoPy missed)
+                great_thresh_ind = np.where(iDat[' RT (ms)'] >= rt_threshold)
+                iDat.loc[great_thresh_ind[0], 'correct'] = 0
+                iDat.loc[great_thresh_ind[0], ' RT (ms)'] = 0
+                iDat.loc[great_thresh_ind[0], 'response'] = 'timeout'
                 
                 # remove data with RT beyond x * std of mean (rm_outliers_std defined at beginning of function)
                 def drop(group):
                     mean, std = group.mean(), group.std()
                     inliers = (group - mean).abs() <= rm_outliers_std * std
                     return inliers
-                
-                maskRT = iDat.groupby(' condition')[' RT (ms)'].apply(drop)
-                iDat = iDat[maskRT]           
+
+                # Remove outliers ONLY for CORRECT trials
+                #maskRT = iDat.groupby(' condition')[' RT (ms)'].apply(drop)
+                #iDat = iDat[maskRT]
+                maskRT = iDat[(iDat['correct'] == 1)].groupby(' condition')[' RT (ms)'].apply(drop) # returns the inliers mask
+                iDat.drop(iDat[(iDat['correct'] == 1) & (~maskRT)].index, inplace=True)
                 
                 # accuracy
                 iDat_acc = iDat.groupby(' condition').agg({'correct': np.average})
-                
+
                 # RT w/ removal of incorrect trials
                 iDat_corrTrials = iDat.copy()
                 iDat_corrTrials = iDat[(iDat['correct'] == 1)]
@@ -79,16 +93,16 @@ def get_participant_data(aPs, cPs, paths):
                                             'wi_RT': iDat_corrTri_RT.loc[3, ' RT (ms)'],
                                             'ac_RT': iDat_corrTri_RT.loc[4, ' RT (ms)']},
                                 ignore_index=True)
-                    
+                   
         dat_c1 = dat_c1[['wi_acc', 'ac_acc', 'wi_RT', 'ac_RT']]
         dat_c2 = dat_c2[['wi_acc', 'ac_acc', 'wi_RT', 'ac_RT']]
-        
+       
         if p == 'a':
             dat_c1.set_index(aPs, inplace=True)
             dat_c2.set_index(aPs, inplace=True)
             aDat = [dat_c1, dat_c2]
         else:
-            dat_c1.set_index(cPs, inplace=True)
+            dat_c1.set_index(cPs[np.where(cPs != 4)], inplace=True) # <---- hard-coded subj ID
             dat_c2.set_index(cPs, inplace=True)
             cDat = [dat_c1, dat_c2]
                 
@@ -98,9 +112,9 @@ def get_participant_data(aPs, cPs, paths):
 
 
 
-def get_trial_data(aPs, cPs, paths):
+def get_trial_data_plt(aPs, cPs, paths):
     """
-    read participant data stored as csv files
+    read participant data stored as csv files and return trial data avg'd over subjects
 
     Parameters
     ----------
@@ -117,7 +131,9 @@ def get_trial_data(aPs, cPs, paths):
 
     Notes
     -----
-    NA
+    Not currently removing outlier data per subject
+    Hard-coded child subj who is missing data from one cartoon (subj 4, cartoon 1)
+    Have to code handling of >rt_threshold data (PsychoPy missed these catches)
     """
     import pdb
     import numpy as np
@@ -126,6 +142,8 @@ def get_trial_data(aPs, cPs, paths):
     dPath = paths[0]
     otherPath1 = paths[1]
     cartoonNames = ['rugrats', 'busyWorld']
+    
+    rt_threshold = 3000
 
     # read adult data first, then child data
     for p in ('a', 'c'):
@@ -133,8 +151,8 @@ def get_trial_data(aPs, cPs, paths):
             iPs = aPs
         else:
             iPs = cPs
-            allDat_byTrial = {'aDat_acc_byCs': aDat_acc, 'aDat_RT_byCs': aDat_RT, 'aPs': aPs, 'cPs': cPs} # dummy code when no children data
-            return allDat_byTrial # dummy code when no children data
+            #allDat_byTrial = {'aDat_acc_byCs': aDat_acc, 'aDat_RT_byCs': aDat_RT, 'aPs': aPs, 'cPs': cPs} # dummy code when no children data
+            #return allDat_byTrial # dummy code when no children data
             
         dat_acc_c1 = pd.DataFrame()
         dat_RT_c1 = pd.DataFrame()
@@ -148,6 +166,9 @@ def get_trial_data(aPs, cPs, paths):
                 iCartoonOrder = ['2', '1']
     
             for s, c in enumerate(iCartoonOrder):
+                if (p == 'c' and i == '4'): # <---- hard-coded subj ID
+                    continue
+                
                 iDat_nonSort = pd.read_csv(dPath + '/' + p + '_p' + str(i) + '_s' + str(s + 1) + '_c' + c + '.csv')
                 iDat_nonSort['trialNo'] = iDat_nonSort.index
                             
@@ -156,6 +177,12 @@ def get_trial_data(aPs, cPs, paths):
                 
                 iDat = iDat_nonSort.copy()
                 iDat = iDat.sort_values([' condition', 'trialNo'])
+                
+                # label >rt_threshold trials as 'timeout' (where PsychoPy missed)
+                great_thresh_ind = np.where(iDat[' RT (ms)'] >= rt_threshold)
+                iDat.loc[great_thresh_ind[0], 'correct'] = 0
+                iDat.loc[great_thresh_ind[0], ' RT (ms)'] = 0
+                iDat.loc[great_thresh_ind[0], 'response'] = 'timeout'
                 
                 # replace RT with nan for incorrect trials
                 iDat.loc[(iDat['correct'] == 0), ' RT (ms)'] = np.nan
