@@ -1,3 +1,4 @@
+import init_es2, analy_funs_es2
 from init_es2 import *
 from analy_funs_es2 import *
 sys.path.append('/Users/bauera/Dropbox/UofT/experiments/event-segmentation/analysis')
@@ -77,8 +78,8 @@ forLMER_c2 = forLMER_c2.merge(RT_esn_all.loc[9:,], on='itemID') \
 
 # get phase 2 data and expand by subj =========================================
 # adult data only
-allDat_byTrial_RT_c1 = get_trial_data(aPs, cPs, paths)['aDat_RT_byCs'][0]
-allDat_byTrial_acc_c1 = get_trial_data(aPs, cPs, paths)['aDat_acc_byCs'][0]
+allDat_byTrial_RT_c1 = get_trial_data_plt(aPs, cPs, paths, RT_thresh_fl)['aDat_RT_byCs'][0]
+allDat_byTrial_acc_c1 = get_trial_data_plt(aPs, cPs, paths, RT_thresh_fl)['aDat_acc_byCs'][0]
 RT_c1 = pd.DataFrame()
 acc_c1 = pd.DataFrame()
 for i in range(len(aPs)):
@@ -90,8 +91,8 @@ for i in range(len(aPs)):
                  .rename(columns={'subj' + str(i+1): 'phase2_acc'}), df_subjID['subjID']],axis=1), ignore_index=True)
 phase2_c1 = RT_c1.merge(acc_c1)
 
-allDat_byTrial_RT_c2 = get_trial_data(aPs, cPs, paths)['aDat_RT_byCs'][1]
-allDat_byTrial_acc_c2 = get_trial_data(aPs, cPs, paths)['aDat_acc_byCs'][1]
+allDat_byTrial_RT_c2 = get_trial_data_plt(aPs, cPs, paths, RT_thresh_fl)['aDat_RT_byCs'][1]
+allDat_byTrial_acc_c2 = get_trial_data_plt(aPs, cPs, paths, RT_thresh_fl)['aDat_acc_byCs'][1]
 RT_c2 = pd.DataFrame()
 acc_c2 = pd.DataFrame()
 for i in range(len(aPs)):

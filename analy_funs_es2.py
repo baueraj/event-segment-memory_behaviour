@@ -1,4 +1,4 @@
-def get_participant_data_plt(aPs, cPs, paths):
+def get_participant_data_plt(aPs, cPs, paths, rt_thresh_fl):
     """
     read participant data stored as csv files
 
@@ -10,6 +10,8 @@ def get_participant_data_plt(aPs, cPs, paths):
         children participant IDs   
     paths : list of strings
         paths to files
+    rt_thresh_fl : int (==0 or 1)
+        flag to further threshold RT (apart from outliers)    
         
     Returns
     -------
@@ -18,7 +20,7 @@ def get_participant_data_plt(aPs, cPs, paths):
     Notes
     -----
     Hard-coded child subj who is missing data from one cartoon (subj 4, cartoon 1)
-    Have to code handling of >rt_threshold data (PsychoPy missed these catches)
+    Includes code handling of >rt_threshold data (PsychoPy missed these catches)
     """
     
     import pdb
@@ -26,7 +28,10 @@ def get_participant_data_plt(aPs, cPs, paths):
     import pandas as pd
     
     rm_outliers_std = 2.5
-    rt_threshold = 3000
+    if rt_thresh_fl:
+        rt_threshold = 3000
+    else:
+        rt_threshold = 99999
     
     dPath = paths[0]
 
@@ -59,7 +64,7 @@ def get_participant_data_plt(aPs, cPs, paths):
                 great_thresh_ind = np.where(iDat[' RT (ms)'] >= rt_threshold)
                 iDat.loc[great_thresh_ind[0], 'correct'] = 0
                 iDat.loc[great_thresh_ind[0], ' RT (ms)'] = 0
-                iDat.loc[great_thresh_ind[0], 'response'] = 'timeout'
+                iDat.loc[great_thresh_ind[0], ' response'] = 'timeout'
                 
                 # remove data with RT beyond x * std of mean (rm_outliers_std defined at beginning of function)
                 def drop(group):
@@ -75,6 +80,7 @@ def get_participant_data_plt(aPs, cPs, paths):
                 
                 # accuracy
                 iDat_acc = iDat.groupby(' condition').agg({'correct': np.average})
+                iDat_timeout = iDat.groupby(' condition').agg({' response': lambda x: (x == 'timeout').mean()})
 
                 # RT w/ removal of incorrect trials
                 iDat_corrTrials = iDat.copy()
@@ -82,20 +88,49 @@ def get_participant_data_plt(aPs, cPs, paths):
                 iDat_corrTri_RT = iDat_corrTrials.groupby(' condition').agg({' RT (ms)': np.average})
                 
                 if c == '1':
+                    
+                    
+                    if 1 in iDat_corrTri_RT.index:
+                        wi_RT_add = iDat_corrTri_RT.loc[1, ' RT (ms)']
+                    else:
+                        # consider changing to nan or somehow indicating this cond's data doesn't exist for this subj
+                        wi_RT_add = 0
+                        
+                    if 2 in iDat_corrTri_RT.index:
+                        ac_RT_add = iDat_corrTri_RT.loc[2, ' RT (ms)']
+                    else:
+                        ac_RT_add = 0    
+                        
                     dat_c1 = dat_c1.append({'wi_acc': iDat_acc.loc[1, 'correct'], 
                                             'ac_acc': iDat_acc.loc[2, 'correct'],
-                                            'wi_RT': iDat_corrTri_RT.loc[1, ' RT (ms)'],
-                                            'ac_RT': iDat_corrTri_RT.loc[2, ' RT (ms)']},
+                                            'wi_tout': iDat_timeout.loc[1, ' response'], 
+                                            'ac_tout': iDat_timeout.loc[2, ' response'],                      
+                                            'wi_RT': wi_RT_add,
+                                            'ac_RT': ac_RT_add},
                                 ignore_index=True)
+
                 else:
+                    
+                    if 3 in iDat_corrTri_RT.index:
+                        wi_RT_add = iDat_corrTri_RT.loc[3, ' RT (ms)']
+                    else:
+                        wi_RT_add = 0
+                        
+                    if 4 in iDat_corrTri_RT.index:
+                        ac_RT_add = iDat_corrTri_RT.loc[4, ' RT (ms)']
+                    else:
+                        ac_RT_add = 0   
+                    
                     dat_c2 = dat_c2.append({'wi_acc': iDat_acc.loc[3, 'correct'], 
                                             'ac_acc': iDat_acc.loc[4, 'correct'],
-                                            'wi_RT': iDat_corrTri_RT.loc[3, ' RT (ms)'],
-                                            'ac_RT': iDat_corrTri_RT.loc[4, ' RT (ms)']},
+                                            'wi_tout': iDat_timeout.loc[3, ' response'], 
+                                            'ac_tout': iDat_timeout.loc[4, ' response'],                     
+                                            'wi_RT': wi_RT_add,
+                                            'ac_RT': ac_RT_add},
                                 ignore_index=True)
                    
-        dat_c1 = dat_c1[['wi_acc', 'ac_acc', 'wi_RT', 'ac_RT']]
-        dat_c2 = dat_c2[['wi_acc', 'ac_acc', 'wi_RT', 'ac_RT']]
+        dat_c1 = dat_c1[['wi_acc', 'ac_acc', 'wi_tout', 'ac_tout', 'wi_RT', 'ac_RT']]
+        dat_c2 = dat_c2[['wi_acc', 'ac_acc', 'wi_tout', 'ac_tout', 'wi_RT', 'ac_RT']]
        
         if p == 'a':
             dat_c1.set_index(aPs, inplace=True)
@@ -112,7 +147,7 @@ def get_participant_data_plt(aPs, cPs, paths):
 
 
 
-def get_trial_data_plt(aPs, cPs, paths):
+def get_trial_data_plt(aPs, cPs, paths, rt_thresh_fl):
     """
     read participant data stored as csv files and return trial data avg'd over subjects
 
@@ -124,6 +159,8 @@ def get_trial_data_plt(aPs, cPs, paths):
         children participant IDs   
     paths : list of strings
         paths to files
+    rt_thresh_fl : int (==0 or 1)
+        flag to further threshold RT    
         
     Returns
     -------
@@ -131,10 +168,12 @@ def get_trial_data_plt(aPs, cPs, paths):
 
     Notes
     -----
+    Not currently assessing 'timeout' as its own response
     Not currently removing outlier data per subject
     Hard-coded child subj who is missing data from one cartoon (subj 4, cartoon 1)
-    Have to code handling of >rt_threshold data (PsychoPy missed these catches)
+    Includes code handling of >rt_threshold data (PsychoPy missed these catches)
     """
+
     import pdb
     import numpy as np
     import pandas as pd
@@ -143,7 +182,10 @@ def get_trial_data_plt(aPs, cPs, paths):
     otherPath1 = paths[1]
     cartoonNames = ['rugrats', 'busyWorld']
     
-    rt_threshold = 3000
+    if rt_thresh_fl:
+        rt_threshold = 3000
+    else:
+        rt_threshold = 99999
 
     # read adult data first, then child data
     for p in ('a', 'c'):
@@ -166,8 +208,8 @@ def get_trial_data_plt(aPs, cPs, paths):
                 iCartoonOrder = ['2', '1']
     
             for s, c in enumerate(iCartoonOrder):
-                if (p == 'c' and i == '4'): # <---- hard-coded subj ID
-                    continue
+                if (p == 'c' and i == 4 and c == '1'): # <---- hard-coded subj ID
+                   continue
                 
                 iDat_nonSort = pd.read_csv(dPath + '/' + p + '_p' + str(i) + '_s' + str(s + 1) + '_c' + c + '.csv')
                 iDat_nonSort['trialNo'] = iDat_nonSort.index
@@ -182,7 +224,7 @@ def get_trial_data_plt(aPs, cPs, paths):
                 great_thresh_ind = np.where(iDat[' RT (ms)'] >= rt_threshold)
                 iDat.loc[great_thresh_ind[0], 'correct'] = 0
                 iDat.loc[great_thresh_ind[0], ' RT (ms)'] = 0
-                iDat.loc[great_thresh_ind[0], 'response'] = 'timeout'
+                iDat.loc[great_thresh_ind[0], ' response'] = 'timeout'
                 
                 # replace RT with nan for incorrect trials
                 iDat.loc[(iDat['correct'] == 0), ' RT (ms)'] = np.nan
@@ -219,7 +261,7 @@ def get_trial_data_plt(aPs, cPs, paths):
             cDat_RT = [dat_RT_c1, dat_RT_c2]
                 
     allDat_byTrial = {'aDat_acc_byCs': aDat_acc, 'aDat_RT_byCs': aDat_RT,
-              'cDat_acc_byCs': cDat_acc, 'acDat_RT_byCs': cDat_RT,
+              'cDat_acc_byCs': cDat_acc, 'cDat_RT_byCs': cDat_RT,
               'aPs': aPs, 'cPs': cPs}
 
     return allDat_byTrial

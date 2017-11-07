@@ -63,7 +63,6 @@ df_a_RT_c2 <- summarySEwithin(df_long, measurevar="value", withinvars="condition
                                idvar="X", na.rm=FALSE, conf.interval=.95)
 
 # combine SEs, write to csv =============================================================
-
 cartoon <- c(1, 2) 
 accSE_byCs <- c(df_a_acc_c1['se']$se[1], df_a_acc_c2['se']$se[1])
 RTSE_byCs <- c(df_a_RT_c1['se']$se[1], df_a_RT_c2['se']$se[1])

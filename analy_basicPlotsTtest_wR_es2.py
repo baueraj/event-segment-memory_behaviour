@@ -1,3 +1,6 @@
+import init_es2, analy_funs_es2
+#importlib.reload(init_es2)
+#importlib.reload(analy_funs_es2)
 from init_es2 import *
 from analy_funs_es2 import *
 from scipy.stats import ttest_rel
@@ -8,7 +11,7 @@ plt.show()
 
 fileSavePath = '../results/meetKamy_plt2/'
 
-allDat = get_participant_data_plt(aPs, cPs, paths)
+allDat = get_participant_data_plt(aPs, cPs, paths, RT_thresh_fl)
 
 pGrps = ['aDat_byCs', 'cDat_byCs']
 
@@ -29,11 +32,11 @@ for pGrp in pGrps:
     
     # =========================================================================                   
     # plot barplots (with SEwi error bars, in R) of acc and RT separately per cartoon
-    dat_plot = [allDat[pGrp][0].mean().values.tolist()[0:2], allDat[pGrp][0].mean().values.tolist()[2:],
-                allDat[pGrp][1].mean().values.tolist()[0:2], allDat[pGrp][1].mean().values.tolist()[2:]]
+    dat_plot = [allDat[pGrp][0].mean().values.tolist()[0:2], allDat[pGrp][0].mean().values.tolist()[4:],
+                allDat[pGrp][1].mean().values.tolist()[0:2], allDat[pGrp][1].mean().values.tolist()[4:]]
     dat_SEwi_plot = [[dfSEwi.loc[0,'acc'], dfSEwi.loc[0,'acc']], [dfSEwi.loc[0,'RT'], dfSEwi.loc[0,'RT']],
                      [dfSEwi.loc[1,'acc'], dfSEwi.loc[1,'acc']], [dfSEwi.loc[1,'RT'], dfSEwi.loc[1,'RT']]]
-    
+
     pltColors = ['b', 'r']
     plt_acc_Xlabels = ['wi_acc', 'ac_acc']
     plt_RT_Xlabels = ['wi_RT', 'ac_RT']
@@ -53,11 +56,11 @@ for pGrp in pGrps:
         if i % 2 == 0:
             pltTitle = pGrp[0] + '_' + cartoonNames[int(np.floor(i/2))] + '_acc'
             ax.set_xticklabels(plt_acc_Xlabels, fontsize=20)
-            #ax.set_ylim([0.3, 1.0]) # <-----------hard-coded ylims
+            ax.set_ylim([0.2, 1.0]) # <-----------hard-coded ylims
         else:
             pltTitle = pGrp[0] + '_' + cartoonNames[int(np.floor(i/2))] + '_RT'
             ax.set_xticklabels(plt_RT_Xlabels, fontsize=20)
-            #ax.set_ylim([900, 1600]) # <-----------hard-coded ylims
+            ax.set_ylim([800, 1600]) # <-----------hard-coded ylims
     
         plt.title(pltTitle, fontsize=20)
         plt.yticks(fontsize=18)
@@ -75,8 +78,7 @@ for pGrp in pGrps:
         fig, ax = plt.subplots()
         #fig.set_size_inches(8.0, 5.0)
         
-        bp = ax.boxplot(dat_bPlot[i].values, showfliers=False)
-        
+        bp = ax.boxplot(dat_bPlot[i].values, showfliers=False)        
         y = dat_bPlot[i].values
         x = np.random.normal(1, 0.02, size=len(y))
         ax.plot(x, y, 'ro')
@@ -86,23 +88,72 @@ for pGrp in pGrps:
             pltTitle = pGrp[0] + '_' + cartoonNames[int(np.floor(i/2))] + '_acc'
             ax.set_xticklabels([plt_acc_Xlabels[1] + ' - ' + plt_acc_Xlabels[0]],
                                fontsize=20)
-            #ax.set_ylim([-0.3, 0.7]) # <-----------hard-coded ylims
+            #ax.set_ylim([-0.3, 0.2]) # <-----------hard-coded ylims
         else:
             pltTitle = pGrp[0] + '_' + cartoonNames[int(np.floor(i/2))] + '_RT'
             ax.set_xticklabels([plt_RT_Xlabels[1] + ' - ' + plt_RT_Xlabels[0]],
                                fontsize=20)
-            #ax.set_ylim([-600, 900]) # <-----------hard-coded ylims
+            #ax.set_ylim([-300, 400]) # <-----------hard-coded ylims
         
         plt.title(pltTitle, fontsize=20)
-        plt.yticks(fontsize=18)       
-        plt.savefig(fileSavePath + 'boxplots/{0}_f{1}.jpg'.format(pltTitle,i))
+        plt.yticks(fontsize=18)
+        plt.savefig(fileSavePath + 'boxplots_diffs/{0}_f{1}.jpg'.format(pltTitle,i))
     # =========================================================================
     
     
     
-    # =========================================================================
-    # paired-sample ttests of acc and RT
-    acc_ttest = [ttest_rel(allDat[pGrp][0].loc[:,'ac_acc'], allDat[pGrp][0].loc[:,'wi_acc']),
-                     ttest_rel(allDat[pGrp][1].loc[:,'ac_acc'], allDat[pGrp][1].loc[:,'wi_acc'])]
-    RT_ttest = [ttest_rel(allDat[pGrp][0].loc[:,'ac_RT'], allDat[pGrp][0].loc[:,'wi_RT']),
-                     ttest_rel(allDat[pGrp][1].loc[:,'ac_RT'], allDat[pGrp][1].loc[:,'wi_RT'])]
+    # =========================================================================   
+    # boxplot of acc and RT across conditions
+    if pGrp[0] == 'c': # just kid data for now
+        for i in range(len(cartoonNames)):
+            for j in ['acc', 'RT']:
+                fig, ax = plt.subplots()
+                
+                acc_dat_plt = pd.concat([allDat[pGrp][i]['wi_' + j], allDat[pGrp][i]['ac_' + j]], axis=1) \
+                                    .mean(axis=1)
+                
+                bp = ax.boxplot(acc_dat_plt.values, showfliers=False)        
+                y = acc_dat_plt.values
+                x = np.random.normal(1, 0.02, size=len(y))
+                ax.plot(x, y, 'ro')
+                ax.set_xticklabels([])
+                
+                pltTitle = pGrp[0] + '_' + cartoonNames[i] + '_' + j
+                plt.title(pltTitle, fontsize=20)
+                plt.yticks(fontsize=18)
+                plt.savefig(fileSavePath + 'boxplots/{0}_f{1}.jpg'.format(pltTitle,i))
+    # =========================================================================     
+    
+    
+        
+    # =========================================================================   
+    # line graphs of item accuracy
+    dat_items = get_trial_data_plt(aPs, cPs, paths, RT_thresh_fl)
+    a, b = pGrp.split('_')
+    pGrp_mod = '{}_acc_{}'.format(a, b)
+    
+    for i in range(len(cartoonNames)):
+        fig, ax = plt.subplots()
+        
+        dat_lplot = dat_items[pGrp_mod][i].iloc[:, 2:].mean(axis=1)
+        conds = [str(j) for j in dat_items[pGrp_mod][i].loc[:,' condition']]
+        
+        plt.plot(dat_lplot.values)
+        ax.set_xticks(range(len(conds)))
+        ax.set_xticklabels(conds, fontsize=20)
+        plt.yticks(fontsize=18)
+        ax.set_ylim([0.2, 1.0]) # <-----------hard-coded ylims
+        pltTitle = pGrp_mod[0] + '_' + cartoonNames[i] + '_acc-items'
+        plt.title(pltTitle, fontsize=20)
+        plt.savefig(fileSavePath + 'items/{0}_f{1}.jpg'.format(pltTitle,i))
+    # ========================================================================= 
+
+
+
+# =========================================================================
+# paired-sample ttests of acc and RT
+pGrp = 'aDat_byCs'
+acc_ttest = [ttest_rel(allDat[pGrp][0].loc[:,'ac_acc'], allDat[pGrp][0].loc[:,'wi_acc']),
+                 ttest_rel(allDat[pGrp][1].loc[:,'ac_acc'], allDat[pGrp][1].loc[:,'wi_acc'])]
+RT_ttest = [ttest_rel(allDat[pGrp][0].loc[:,'ac_RT'], allDat[pGrp][0].loc[:,'wi_RT']),
+                 ttest_rel(allDat[pGrp][1].loc[:,'ac_RT'], allDat[pGrp][1].loc[:,'wi_RT'])]
