@@ -19,7 +19,6 @@ def get_participant_data_plt(aPs, cPs, paths, rt_thresh_fl):
 
     Notes
     -----
-    Hard-coded child subj who is missing data from one cartoon (subj 4, cartoon 1)
     Includes code handling of >rt_threshold data (PsychoPy missed these catches)
     """
     
@@ -47,6 +46,8 @@ def get_participant_data_plt(aPs, cPs, paths, rt_thresh_fl):
 
         dat_c1 = pd.DataFrame()
         dat_c2 = pd.DataFrame()
+        ps_c1 = []
+        ps_c2 = []
             
         for idx, i in enumerate(iPs):
             if i % 2 == 0:
@@ -55,18 +56,20 @@ def get_participant_data_plt(aPs, cPs, paths, rt_thresh_fl):
                 iCartoonOrder = ['2', '1']
     
             for s, c in enumerate(iCartoonOrder):
-                if (p == 'c' and i == 4 and c == '1'): # <---- hard-coded subj ID
-                   continue
                 
-                iDat = pd.read_csv(dPath + '/' + p + '_p' + str(i) + '_s' + str(s + 1) + '_c' + c + '.csv')
-
+                try:
+                    iDat = pd.read_csv(dPath + '/' + p + '_p' + str(i) + '_s' + str(s + 1) + '_c' + c + '.csv')
+                except:
+                    print('{}{} missing data for c{}'.format(p, str(i), c))
+                    continue
+                
                 # label >rt_threshold trials as 'timeout' (where PsychoPy missed)
                 great_thresh_ind = np.where(iDat[' RT (ms)'] >= rt_threshold)
                 iDat.loc[great_thresh_ind[0], 'correct'] = 0
                 iDat.loc[great_thresh_ind[0], ' RT (ms)'] = 0
                 iDat.loc[great_thresh_ind[0], ' response'] = 'timeout'
                 
-                # remove data with RT beyond x * std of mean (rm_outliers_std defined at beginning of function)
+                # remove data with RT beyond x * std of mean (rm_outliers_std defined above)
                 def drop(group):
                     mean, std = group.mean(), group.std()
                     inliers = (group - mean).abs() <= rm_outliers_std * std
@@ -89,7 +92,6 @@ def get_participant_data_plt(aPs, cPs, paths, rt_thresh_fl):
                 
                 if c == '1':
                     
-                    
                     if 1 in iDat_corrTri_RT.index:
                         wi_RT_add = iDat_corrTri_RT.loc[1, ' RT (ms)']
                     else:
@@ -108,6 +110,7 @@ def get_participant_data_plt(aPs, cPs, paths, rt_thresh_fl):
                                             'wi_RT': wi_RT_add,
                                             'ac_RT': ac_RT_add},
                                 ignore_index=True)
+                    ps_c1.append(i)
 
                 else:
                     
@@ -128,17 +131,19 @@ def get_participant_data_plt(aPs, cPs, paths, rt_thresh_fl):
                                             'wi_RT': wi_RT_add,
                                             'ac_RT': ac_RT_add},
                                 ignore_index=True)
-                   
+                    ps_c2.append(i)
+                    
+        #reorder columns
         dat_c1 = dat_c1[['wi_acc', 'ac_acc', 'wi_tout', 'ac_tout', 'wi_RT', 'ac_RT']]
         dat_c2 = dat_c2[['wi_acc', 'ac_acc', 'wi_tout', 'ac_tout', 'wi_RT', 'ac_RT']]
        
         if p == 'a':
-            dat_c1.set_index(aPs, inplace=True)
-            dat_c2.set_index(aPs, inplace=True)
+            dat_c1.set_index(np.array(ps_c1), inplace=True)
+            dat_c2.set_index(np.array(ps_c2), inplace=True)
             aDat = [dat_c1, dat_c2]
         else:
-            dat_c1.set_index(cPs[np.where(cPs != 4)], inplace=True) # <---- hard-coded subj ID
-            dat_c2.set_index(cPs, inplace=True)
+            dat_c1.set_index(np.array(ps_c1), inplace=True)
+            dat_c2.set_index(np.array(ps_c2), inplace=True)
             cDat = [dat_c1, dat_c2]
                 
     allDat = {'aDat_byCs': aDat, 'cDat_byCs': cDat, 'aPs': aPs, 'cPs': cPs}
@@ -170,7 +175,6 @@ def get_trial_data_plt(aPs, cPs, paths, rt_thresh_fl):
     -----
     Not currently assessing 'timeout' as its own response
     Not currently removing outlier data per subject
-    Hard-coded child subj who is missing data from one cartoon (subj 4, cartoon 1)
     Includes code handling of >rt_threshold data (PsychoPy missed these catches)
     """
 
@@ -208,10 +212,13 @@ def get_trial_data_plt(aPs, cPs, paths, rt_thresh_fl):
                 iCartoonOrder = ['2', '1']
     
             for s, c in enumerate(iCartoonOrder):
-                if (p == 'c' and i == 4 and c == '1'): # <---- hard-coded subj ID
-                   continue
                 
-                iDat_nonSort = pd.read_csv(dPath + '/' + p + '_p' + str(i) + '_s' + str(s + 1) + '_c' + c + '.csv')
+                try:
+                    iDat_nonSort = pd.read_csv(dPath + '/' + p + '_p' + str(i) + '_s' + str(s + 1) + '_c' + c + '.csv')
+                except:
+                    print('{}{} missing data for c{}'.format(p, str(i), c))
+                    continue
+                
                 iDat_nonSort['trialNo'] = iDat_nonSort.index
                             
                 getItemIDs = pd.read_csv(otherPath1 + '/' + 'forLMER_randEffectsVars_' + cartoonNames[int(c)-1] + '_init.csv')
@@ -241,7 +248,6 @@ def get_trial_data_plt(aPs, cPs, paths, rt_thresh_fl):
                     dat_acc_c1['subj' + str(i)] = iDat['correct'].copy()
                     dat_RT_c1['subj' + str(i)] = iDat[' RT (ms)'].copy()
                 else:
-                    #pdb.set_trace()
                     if len(dat_acc_c2) == 0:
                         dat_acc_c2 = pd.DataFrame(index=iDat['trialNo'].copy())
                         dat_acc_c2[' condition'] = iDat[' condition'].copy()

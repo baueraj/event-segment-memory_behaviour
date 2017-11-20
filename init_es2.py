@@ -18,12 +18,23 @@ dPath = '../experiment/output-from-test-rooms'
 otherPath1 = '../designMaterials'
 paths = [dPath, otherPath1]
 
+
+
 # plt1 ========================================================================
 #aPs = np.array([1, 2, 3, 4, 5, 6, 7, 8])
 #cPs = np.array([1, 5, 6, 7])
 #RT_thresh_fl = 0
 
 # plt2 ========================================================================
+# c4 issing cartoon 1
 aPs = np.array([9, 10, 11, 12, 13, 14, 15, 16, 17])
-cPs = np.array([2, 3, 4])
-RT_thresh_fl = 1
+#cPs = np.array([2, 3, 4])
+#RT_thresh_fl = 1
+
+
+
+# plt3 ========================================================================
+# c8-15 have data for only c1 or c2, alternately
+#aPs = np.array([])
+cPs = np.array([8, 9, 10, 11, 12, 13, 14, 15])
+RT_thresh_fl = 0

@@ -9,7 +9,7 @@ if plt.get_fignums():
     plt.close('all')
 plt.show()
 
-fileSavePath = '../results/meetKamy_plt2/'
+fileSavePath = '../results/meetKamy/'
 
 allDat = get_participant_data_plt(aPs, cPs, paths, RT_thresh_fl)
 
@@ -60,7 +60,7 @@ for pGrp in pGrps:
         else:
             pltTitle = pGrp[0] + '_' + cartoonNames[int(np.floor(i/2))] + '_RT'
             ax.set_xticklabels(plt_RT_Xlabels, fontsize=20)
-            ax.set_ylim([800, 1600]) # <-----------hard-coded ylims
+            #ax.set_ylim([800, 1600]) # <-----------hard-coded ylims
     
         plt.title(pltTitle, fontsize=20)
         plt.yticks(fontsize=18)
@@ -150,7 +150,7 @@ for pGrp in pGrps:
 
 
 
-# =========================================================================
+# =============================================================================
 # paired-sample ttests of acc and RT
 pGrp = 'aDat_byCs'
 acc_ttest = [ttest_rel(allDat[pGrp][0].loc[:,'ac_acc'], allDat[pGrp][0].loc[:,'wi_acc']),
