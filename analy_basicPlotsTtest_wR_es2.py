@@ -9,7 +9,7 @@ if plt.get_fignums():
     plt.close('all')
 plt.show()
 
-fileSavePath = '../results/meetKamy/'
+fileSavePath = '../results/basicPlots/'
 
 allDat = get_participant_data_plt(aPs, cPs, paths, RT_thresh_fl)
 
@@ -21,7 +21,8 @@ for pGrp in pGrps:
     # get Morey within-subjects SE
     for i in range(len(allDat[pGrp])):
         df2Write = allDat[pGrp][i]
-        df2Write.to_csv('df_' + pGrp + '_' + str(i + 1) + '.csv', sep=',') #read by morey_errorBars.R
+        df2Write.to_csv('df_forMoreySE_' + str(i + 1) + '.csv', sep=',') #read by morey_errorBars.R
+        #df2Write.to_csv('df_' + pGrp + '_' + str(i + 1) + '.csv', sep=',') #read by morey_errorBars.R
     
     os.system('Rscript morey_errorBars.R')
     
@@ -31,14 +32,15 @@ for pGrp in pGrps:
     
     
     # =========================================================================                   
-    # plot barplots (with SEwi error bars, in R) of acc and RT separately per cartoon
-    dat_plot = [allDat[pGrp][0].mean().values.tolist()[0:2], allDat[pGrp][0].mean().values.tolist()[4:],
-                allDat[pGrp][1].mean().values.tolist()[0:2], allDat[pGrp][1].mean().values.tolist()[4:]]
-    dat_SEwi_plot = [[dfSEwi.loc[0,'acc'], dfSEwi.loc[0,'acc']], [dfSEwi.loc[0,'RT'], dfSEwi.loc[0,'RT']],
-                     [dfSEwi.loc[1,'acc'], dfSEwi.loc[1,'acc']], [dfSEwi.loc[1,'RT'], dfSEwi.loc[1,'RT']]]
+    # barplots (with SEwi error bars, in R) of acc, RT, and timeout rate separately per cartoon
+    dat_plot = [allDat[pGrp][0].mean().values.tolist()[0:2], allDat[pGrp][0].mean().values.tolist()[2:4], allDat[pGrp][0].mean().values.tolist()[4:],
+                allDat[pGrp][1].mean().values.tolist()[0:2], allDat[pGrp][1].mean().values.tolist()[2:4], allDat[pGrp][1].mean().values.tolist()[4:]]
+    dat_SEwi_plot = [[dfSEwi.loc[0,'acc'], dfSEwi.loc[0,'acc']], [dfSEwi.loc[0,'tout'], dfSEwi.loc[0,'tout']], [dfSEwi.loc[0,'RT'], dfSEwi.loc[0,'RT']],
+                     [dfSEwi.loc[1,'acc'], dfSEwi.loc[1,'acc']], [dfSEwi.loc[1,'tout'], dfSEwi.loc[1,'tout']], [dfSEwi.loc[1,'RT'], dfSEwi.loc[1,'RT']]]
 
     pltColors = ['b', 'r']
     plt_acc_Xlabels = ['wi_acc', 'ac_acc']
+    plt_tout_Xlabels = ['wi_tout', 'ac_tout']
     plt_RT_Xlabels = ['wi_RT', 'ac_RT']
     
     for i in range(len(dat_plot)):
@@ -53,15 +55,19 @@ for pGrp in pGrps:
         rng = np.arange(0.5, 1.5, 0.5)
         ax.set_xticks(rng)
         
-        if i % 2 == 0:
-            pltTitle = pGrp[0] + '_' + cartoonNames[int(np.floor(i/2))] + '_acc'
+        if i in [0, 3]:
+            pltTitle = pGrp[0] + '_' + cartoonNames[int(np.floor(i/3))] + '_acc'
             ax.set_xticklabels(plt_acc_Xlabels, fontsize=20)
             ax.set_ylim([0.2, 1.0]) # <-----------hard-coded ylims
+        elif i in [1, 4]:
+            pltTitle = pGrp[0] + '_' + cartoonNames[int(np.floor(i/3))] + '_tout'
+            ax.set_xticklabels(plt_tout_Xlabels, fontsize=20)
+            ax.set_ylim([0, 0.4]) # <-----------hard-coded ylims
         else:
-            pltTitle = pGrp[0] + '_' + cartoonNames[int(np.floor(i/2))] + '_RT'
+            pltTitle = pGrp[0] + '_' + cartoonNames[int(np.floor(i/3))] + '_RT'
             ax.set_xticklabels(plt_RT_Xlabels, fontsize=20)
             #ax.set_ylim([800, 1600]) # <-----------hard-coded ylims
-    
+            
         plt.title(pltTitle, fontsize=20)
         plt.yticks(fontsize=18)
         plt.savefig(fileSavePath + 'barplots/{0}_f{1}.jpg'.format(pltTitle,i))
@@ -70,9 +76,9 @@ for pGrp in pGrps:
     
     
     # =========================================================================   
-    # boxplot of difference scores of within vs. across boundaries of acc and RT separately per cartoon
-    dat_bPlot = [allDat[pGrp][0]['ac_acc'] - allDat[pGrp][0]['wi_acc'], allDat[pGrp][0]['ac_RT'] - allDat[pGrp][0]['wi_RT'],
-                 allDat[pGrp][1]['ac_acc'] - allDat[pGrp][1]['wi_acc'], allDat[pGrp][1]['ac_RT'] - allDat[pGrp][1]['wi_RT']]
+    # boxplot of difference scores of within vs. across boundaries of acc, RT, and timeout rate separately per cartoon
+    dat_bPlot = [allDat[pGrp][0]['ac_acc'] - allDat[pGrp][0]['wi_acc'], allDat[pGrp][0]['ac_tout'] - allDat[pGrp][0]['wi_tout'], allDat[pGrp][0]['ac_RT'] - allDat[pGrp][0]['wi_RT'],
+                 allDat[pGrp][1]['ac_acc'] - allDat[pGrp][1]['wi_acc'], allDat[pGrp][1]['ac_tout'] - allDat[pGrp][1]['wi_tout'], allDat[pGrp][1]['ac_RT'] - allDat[pGrp][1]['wi_RT']]
     
     for i in range(len(dat_bPlot)):
         fig, ax = plt.subplots()
@@ -84,13 +90,18 @@ for pGrp in pGrps:
         ax.plot(x, y, 'ro')
         #ax.set_xticks([])
         
-        if i % 2 == 0:
-            pltTitle = pGrp[0] + '_' + cartoonNames[int(np.floor(i/2))] + '_acc'
+        if i in [0, 3]:
+            pltTitle = pGrp[0] + '_' + cartoonNames[int(np.floor(i/3))] + '_acc'
             ax.set_xticklabels([plt_acc_Xlabels[1] + ' - ' + plt_acc_Xlabels[0]],
                                fontsize=20)
             #ax.set_ylim([-0.3, 0.2]) # <-----------hard-coded ylims
+        elif i in [1, 4]:
+            pltTitle = pGrp[0] + '_' + cartoonNames[int(np.floor(i/3))] + '_tout'
+            ax.set_xticklabels([plt_tout_Xlabels[1] + ' - ' + plt_tout_Xlabels[0]],
+                               fontsize=20)
+            #ax.set_ylim([-0.3, 0.2]) # <-----------hard-coded ylims
         else:
-            pltTitle = pGrp[0] + '_' + cartoonNames[int(np.floor(i/2))] + '_RT'
+            pltTitle = pGrp[0] + '_' + cartoonNames[int(np.floor(i/3))] + '_RT'
             ax.set_xticklabels([plt_RT_Xlabels[1] + ' - ' + plt_RT_Xlabels[0]],
                                fontsize=20)
             #ax.set_ylim([-300, 400]) # <-----------hard-coded ylims

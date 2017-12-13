@@ -14,8 +14,8 @@ df<-rbind(df_c1,df_c2)
 df$log_phase2_RT<-log(df$phase2_RT)
 
 # calculate proportion score and compute some bins (note -- HARD-CODED)
-df$boundaryScoreProp<-df$boundaryScore/22
-df$boundaryScoreProp<-df$boundaryScore/22
+df$boundaryScoreProp<-df$boundaryScore/22 #<------------ NOTE: HARD-CODED NO. OF SUBJECTS
+df$boundaryScoreProp<-df$boundaryScore/22 #<------------ NOTE: HARD-CODED NO. OF SUBJECTS
 df$boundaryScoreBin4<-round(df$boundaryScoreProp*3.6)
 df$boundaryScoreBin<-1*(df$boundaryScoreProp>median(df$boundaryScoreProp))
 

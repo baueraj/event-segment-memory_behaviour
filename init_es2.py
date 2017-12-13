@@ -31,10 +31,8 @@ aPs = np.array([9, 10, 11, 12, 13, 14, 15, 16, 17])
 #cPs = np.array([2, 3, 4])
 #RT_thresh_fl = 1
 
-
-
 # plt3 ========================================================================
 # c8-15 have data for only c1 or c2, alternately
 #aPs = np.array([])
-cPs = np.array([8, 9, 10, 11, 12, 13, 14, 15])
+cPs = np.array([8, 9, 10, 11, 12, 13, 14, 15, 16, 19])
 RT_thresh_fl = 0

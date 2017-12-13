@@ -28,7 +28,7 @@ def get_participant_data_plt(aPs, cPs, paths, rt_thresh_fl):
     
     rm_outliers_std = 2.5
     if rt_thresh_fl:
-        rt_threshold = 3000
+        rt_threshold = 5000
     else:
         rt_threshold = 99999
     
@@ -79,10 +79,10 @@ def get_participant_data_plt(aPs, cPs, paths, rt_thresh_fl):
                 #maskRT = iDat.groupby(' condition')[' RT (ms)'].apply(drop)
                 #iDat = iDat[maskRT]
                 maskRT = iDat[(iDat['correct'] == 1)].groupby(' condition')[' RT (ms)'].apply(drop) # returns the inliers mask
-                iDat.drop(iDat[(iDat['correct'] == 1) & (~maskRT)].index, inplace=True)
+                iDat.drop(maskRT[maskRT == False].index, inplace=True)
                 
                 # accuracy
-                iDat_acc = iDat.groupby(' condition').agg({'correct': np.average})
+                iDat_acc = iDat[iDat[' response'] != 'timeout'].groupby(' condition').agg({'correct': np.average})
                 iDat_timeout = iDat.groupby(' condition').agg({' response': lambda x: (x == 'timeout').mean()})
 
                 # RT w/ removal of incorrect trials
@@ -187,7 +187,7 @@ def get_trial_data_plt(aPs, cPs, paths, rt_thresh_fl):
     cartoonNames = ['rugrats', 'busyWorld']
     
     if rt_thresh_fl:
-        rt_threshold = 3000
+        rt_threshold = 5000
     else:
         rt_threshold = 99999
 
@@ -235,39 +235,52 @@ def get_trial_data_plt(aPs, cPs, paths, rt_thresh_fl):
                 
                 # replace RT with nan for incorrect trials
                 iDat.loc[(iDat['correct'] == 0), ' RT (ms)'] = np.nan
+                         
+                # replace acc with nan for timeout trials
+                iDat.loc[(iDat[' response'] == 'timeout'), 'correct'] = np.nan
                 
                 if c == '1':
                     if len(dat_acc_c1) == 0:
                         dat_acc_c1 = pd.DataFrame(index=iDat['trialNo'].copy())
                         dat_acc_c1[' condition'] = iDat[' condition'].copy()
                         dat_acc_c1['itemID'] = iDat['itemID'].copy()
+                        dat_tout_c1 = pd.DataFrame(index=iDat['trialNo'].copy())
+                        dat_tout_c1[' condition'] = iDat[' condition'].copy()
+                        dat_tout_c1['itemID'] = iDat['itemID'].copy()
                         dat_RT_c1 = pd.DataFrame(index=iDat['trialNo'].copy())
                         dat_RT_c1[' condition'] = iDat[' condition'].copy()
                         dat_RT_c1['itemID'] = iDat['itemID'].copy()
                         
                     dat_acc_c1['subj' + str(i)] = iDat['correct'].copy()
+                    dat_tout_c1['subj' + str(i)] = (iDat[' response'] == 'timeout').astype(int)
                     dat_RT_c1['subj' + str(i)] = iDat[' RT (ms)'].copy()
                 else:
                     if len(dat_acc_c2) == 0:
                         dat_acc_c2 = pd.DataFrame(index=iDat['trialNo'].copy())
                         dat_acc_c2[' condition'] = iDat[' condition'].copy()
                         dat_acc_c2['itemID'] = iDat['itemID'].copy()
+                        dat_tout_c2 = pd.DataFrame(index=iDat['trialNo'].copy())
+                        dat_tout_c2[' condition'] = iDat[' condition'].copy()
+                        dat_tout_c2['itemID'] = iDat['itemID'].copy()
                         dat_RT_c2 = pd.DataFrame(index=iDat['trialNo'].copy())
                         dat_RT_c2[' condition'] = iDat[' condition'].copy()
                         dat_RT_c2['itemID'] = iDat['itemID'].copy()
                         
                     dat_acc_c2['subj' + str(i)] = iDat['correct'].copy()
+                    dat_tout_c2['subj' + str(i)] = (iDat[' response'] == 'timeout').astype(int)
                     dat_RT_c2['subj' + str(i)] = iDat[' RT (ms)'].copy()
                 
         if p == 'a':
             aDat_acc = [dat_acc_c1, dat_acc_c2]
+            aDat_tout = [dat_tout_c1, dat_tout_c2]
             aDat_RT = [dat_RT_c1, dat_RT_c2]
         else:
             cDat_acc = [dat_acc_c1, dat_acc_c2]
+            cDat_tout = [dat_tout_c1, dat_tout_c2]
             cDat_RT = [dat_RT_c1, dat_RT_c2]
                 
-    allDat_byTrial = {'aDat_acc_byCs': aDat_acc, 'aDat_RT_byCs': aDat_RT,
-              'cDat_acc_byCs': cDat_acc, 'cDat_RT_byCs': cDat_RT,
+    allDat_byTrial = {'aDat_acc_byCs': aDat_acc, 'aDat_tout_byCs': aDat_tout, 'aDat_RT_byCs': aDat_RT,
+              'cDat_acc_byCs': cDat_acc, 'cDat_tout_byCs': cDat_tout, 'cDat_RT_byCs': cDat_RT,
               'aPs': aPs, 'cPs': cPs}
 
     return allDat_byTrial
